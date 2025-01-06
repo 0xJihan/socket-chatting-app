@@ -94,6 +94,7 @@ dependencies {
        exclude("org.json", "json")
    }
 
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
 
 }
