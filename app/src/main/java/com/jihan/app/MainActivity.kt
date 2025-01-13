@@ -31,6 +31,7 @@ import com.jihan.app.domain.viewmodel.TokenViewmodel
 import com.jihan.app.presentation.screens.HomeScreen
 import com.jihan.app.presentation.screens.LoginScreen
 import com.jihan.app.presentation.screens.SignupScreen
+import com.jihan.app.presentation.screens.components.CenterBox
 import com.jihan.app.presentation.screens.components.OrbitLoading
 import com.jihan.app.ui.theme.AppTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -97,6 +98,9 @@ class MainActivity : ComponentActivity() {
                 MainApp()
             }
         }
+
+
+
     }
 
 
@@ -144,14 +148,5 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@Composable
-fun CenterBox(
-    modifier: Modifier = Modifier.fillMaxSize(), content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier.background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) { content() }
-}
+
 
