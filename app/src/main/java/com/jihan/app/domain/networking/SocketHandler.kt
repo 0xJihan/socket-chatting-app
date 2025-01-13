@@ -9,14 +9,16 @@ import java.net.URISyntaxException
 
 object SocketHandler {
 
-    private lateinit var mSocket: Socket
+    private  var mSocket: Socket?=null
 
     @Synchronized
-    fun setSocket(token:String) {
+    fun setSocket() {
         try {
-            val option = IO.Options()
-            option.auth = mapOf("token" to token)
-            mSocket = IO.socket(BASE_URL,option)
+           // val option = IO.Options()
+           // option.auth = mapOf("token" to token)
+            if (mSocket==null){
+            mSocket = IO.socket(BASE_URL)
+            }
         } catch (err: URISyntaxException) {
             Log.e(TAG, "setSocket: ${err.reason}")
         }
@@ -26,18 +28,18 @@ object SocketHandler {
     }
 
     @Synchronized
-    fun getSocket(): Socket {
+    fun getSocket(): Socket? {
         return mSocket
     }
 
     @Synchronized
     fun establishConnection() {
-        mSocket.connect()
+        mSocket?.connect()
     }
 
     @Synchronized
     fun closeConnection() {
-        mSocket.disconnect()
+        mSocket?.disconnect()
     }
 
 

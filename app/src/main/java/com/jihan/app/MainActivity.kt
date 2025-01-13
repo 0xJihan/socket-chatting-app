@@ -2,98 +2,156 @@ package com.jihan.app
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.sp
-import androidx.core.splashscreen.SplashScreen
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.asLiveData
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.jihan.app.domain.Route
 import com.jihan.app.domain.networking.SocketHandler
 import com.jihan.app.domain.utils.Constants.TAG
-import com.jihan.app.domain.utils.DatastoreUtil
+import com.jihan.app.domain.utils.toast
 import com.jihan.app.domain.viewmodel.TokenViewmodel
 import com.jihan.app.presentation.screens.HomeScreen
 import com.jihan.app.presentation.screens.LoginScreen
 import com.jihan.app.presentation.screens.SignupScreen
+import com.jihan.app.presentation.screens.components.OrbitLoading
 import com.jihan.app.ui.theme.AppTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.android.ext.android.inject
 
 
 class MainActivity : ComponentActivity() {
 
 
-
-
-    private val tokenViewmodel : TokenViewmodel by inject()
+    private val tokenViewmodel: TokenViewmodel by inject()
+    private val validatedUser = MutableStateFlow(false)
+    private val token = tokenViewmodel.token.asLiveData()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val splashScreen = installSplashScreen()
-
-            SocketHandler.setSocket("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3RlbWFpbGEiLCJpYXQiOjE3MzYwOTk5MzV9.PgF7YbwjTsnwSb-ezeAHj_1Ug3tGKIn9c3hIQW7WVVM")
-            SocketHandler.establishConnection()
-
         splashScreen.setKeepOnScreenCondition {
             tokenViewmodel.isFetchingToken.value
         }
 
 
 
+            SocketHandler.setSocket()
+           if (SocketHandler.getSocket()?.connected()?.not() == true){
+               SocketHandler.establishConnection()
+           }
+
+        // Set up authentication listener first
+        SocketHandler.getSocket()?.on("authenticate") { args ->
+            try {
+                val isValidated = args[0] as Boolean
+                validatedUser.value = isValidated
+
+                if (isValidated.not()){
+                    tokenViewmodel.clearToken()
+                }
+
+            } catch (e: Exception) {
+                validatedUser.value = false
+            }
+        }
+
+        SocketHandler.getSocket()?.on("error") {
+            try {
+                val message = it[0] as String
+               runOnUiThread { message.toast(this) }
+            } catch (e: Exception) {
+                Log.e(TAG, "onCreate: ${e.message}")
+            }
+        }
+
+        // Observe token changes and authenticate
+        token.observe(this) { newToken ->
+            if (!tokenViewmodel.isFetchingToken.value) {
+                newToken?.let {
+                    SocketHandler.getSocket()?.emit("authenticate", it)
+                } ?: run {
+                    validatedUser.value = false
+                }
+            }
+        }
+
         setContent {
             AppTheme {
-               MainApp()
+                MainApp()
             }
         }
     }
+
 
     @Composable
     fun MainApp() {
-        val token by tokenViewmodel.token.collectAsState()
+        val token by tokenViewmodel.token.collectAsStateWithLifecycle()
+        val isLoading by tokenViewmodel.isFetchingToken.collectAsStateWithLifecycle()
+        val isValidated by validatedUser.collectAsStateWithLifecycle()
         val navController = rememberNavController()
-        val startDestination = if (token==null) Route.Signup else Route.Home
 
-
-        NavHost(navController,startDestination){
-
-            composable<Route.Login> {
-                LoginScreen()
-            }
-
-            composable<Route.Home> { HomeScreen() }
-
-            composable<Route.Signup> {
-                SignupScreen()
-            }
+        val startDestination = when {
+            isLoading -> Route.Loading
+            token == null || !isValidated -> Route.Login
+            else -> Route.Home
         }
 
+        NavHost(navController, startDestination) {
+            composable<Route.Login> {
+                LoginScreen(navController)
+            }
+            composable<Route.Home> {
+                HomeScreen()
+            }
+            composable<Route.Signup> {
+                SignupScreen(navController)
+            }
+            composable<Route.Loading> {
+                CenterBox {
+                    OrbitLoading(Modifier.size(150.dp))
+                }
+            }
+        }
     }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SocketHandler.closeConnection()
+        SocketHandler.getSocket()?.off("authenticate")
+        SocketHandler.getSocket()?.off("error")
+
+    }
+
 
 }
 
 
-
 @Composable
-fun CenterBox(modifier: Modifier = Modifier.fillMaxSize(),content : @Composable ColumnScope.() -> Unit) {
-   Column(modifier.background(MaterialTheme.colorScheme.background), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {content()}
+fun CenterBox(
+    modifier: Modifier = Modifier.fillMaxSize(), content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier.background(MaterialTheme.colorScheme.background),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) { content() }
 }
 

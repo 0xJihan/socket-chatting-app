@@ -2,6 +2,8 @@ package com.jihan.app.domain.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jihan.app.domain.networking.SocketHandler
+import com.jihan.app.domain.utils.Constants.TOKEN
 import com.jihan.app.domain.utils.DatastoreUtil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,18 +24,32 @@ class TokenViewmodel(
         fetchToken()
     }
 
-    private fun fetchToken(){
-        _isFetchingToken.value = true
+
+    fun validateToken(token: String){
         viewModelScope.launch {
-        val mToken = datastoreUtil.readData("token")
-            _token.value = mToken
-            _isFetchingToken.value = false
+
         }
     }
 
-    fun saveToken(token : String){
+    private fun fetchToken() {
+        _isFetchingToken.value = true
         viewModelScope.launch {
-            datastoreUtil.saveData("token",token)
+            val mToken = datastoreUtil.readData("token")
+            _token.value = mToken
+            _isFetchingToken.value = false
+        }
+
+    }
+
+    fun saveToken(token: String) {
+        viewModelScope.launch {
+            datastoreUtil.saveData(TOKEN, token)
+        }
+    }
+
+    fun clearToken() {
+        viewModelScope.launch {
+            datastoreUtil.clearData("token")
         }
     }
 

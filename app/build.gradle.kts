@@ -70,7 +70,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     //* retrofit networking
     implementation(libs.retrofit)
-    implementation(libs.converter.kotlinx.serialization)
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
 
 
     //*koin

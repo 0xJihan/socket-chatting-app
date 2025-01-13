@@ -3,7 +3,6 @@ package com.jihan.app.presentation.screens
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jihan.app.CenterBox
 import com.jihan.app.domain.viewmodel.TokenViewmodel

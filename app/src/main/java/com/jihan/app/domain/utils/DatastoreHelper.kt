@@ -22,6 +22,12 @@ class DatastoreUtil(private val context: Context) {
         return preferences[stringPreferencesKey(key)]
     }
 
+    suspend fun clearData(key: String) {
+        context.datastore.edit { preferences ->
+            preferences.remove(stringPreferencesKey(key))
+        }
+    }
+
 
 
 
