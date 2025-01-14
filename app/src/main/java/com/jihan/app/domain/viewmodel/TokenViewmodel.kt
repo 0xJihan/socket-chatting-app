@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.jihan.app.domain.networking.SocketHandler
 import com.jihan.app.domain.utils.Constants.TOKEN
 import com.jihan.app.domain.utils.DatastoreUtil
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -25,11 +26,6 @@ class TokenViewmodel(
     }
 
 
-    fun validateToken(token: String){
-        viewModelScope.launch {
-
-        }
-    }
 
     private fun fetchToken() {
         _isFetchingToken.value = true
@@ -44,6 +40,7 @@ class TokenViewmodel(
     fun saveToken(token: String) {
         viewModelScope.launch {
             datastoreUtil.saveData(TOKEN, token)
+            fetchToken()
         }
     }
 

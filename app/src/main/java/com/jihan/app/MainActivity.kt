@@ -2,19 +2,11 @@ package com.jihan.app
 
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -53,10 +45,10 @@ class MainActivity : ComponentActivity() {
 
 
 
-            SocketHandler.setSocket()
-           if (SocketHandler.getSocket()?.connected()?.not() == true){
-               SocketHandler.establishConnection()
-           }
+        SocketHandler.setSocket()
+        if (SocketHandler.getSocket()?.connected()?.not() == true) {
+            SocketHandler.establishConnection()
+        }
 
         // Set up authentication listener first
         SocketHandler.getSocket()?.on("authenticate") { args ->
@@ -64,7 +56,7 @@ class MainActivity : ComponentActivity() {
                 val isValidated = args[0] as Boolean
                 validatedUser.value = isValidated
 
-                if (isValidated.not()){
+                if (isValidated.not()) {
                     tokenViewmodel.clearToken()
                 }
 
@@ -76,7 +68,7 @@ class MainActivity : ComponentActivity() {
         SocketHandler.getSocket()?.on("error") {
             try {
                 val message = it[0] as String
-               runOnUiThread { message.toast(this) }
+                runOnUiThread { message.toast(this) }
             } catch (e: Exception) {
                 Log.e(TAG, "onCreate: ${e.message}")
             }
@@ -85,8 +77,8 @@ class MainActivity : ComponentActivity() {
         // Observe token changes and authenticate
         token.observe(this) { newToken ->
             if (!tokenViewmodel.isFetchingToken.value) {
-                newToken?.let {
-                    SocketHandler.getSocket()?.emit("authenticate", it)
+                newToken?.let { token ->
+                    SocketHandler.getSocket()?.emit("authenticate", token)
                 } ?: run {
                     validatedUser.value = false
                 }
@@ -100,8 +92,8 @@ class MainActivity : ComponentActivity() {
         }
 
 
-
     }
+
 
 
     @Composable
@@ -119,13 +111,13 @@ class MainActivity : ComponentActivity() {
 
         NavHost(navController, startDestination) {
             composable<Route.Login> {
-                LoginScreen(navController)
+                LoginScreen(navController, tokenViewmodel = tokenViewmodel)
             }
             composable<Route.Home> {
                 HomeScreen()
             }
             composable<Route.Signup> {
-                SignupScreen(navController)
+                SignupScreen(navController, tokenViewmodel = tokenViewmodel)
             }
             composable<Route.Loading> {
                 CenterBox {
